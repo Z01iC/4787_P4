@@ -2,6 +2,7 @@
 import os
 import numpy
 from numpy import random
+import random as random2
 import scipy
 import matplotlib
 import mnist
@@ -19,9 +20,6 @@ import time
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPool2D
-from tensorflow.keras.layers import Flatten
-from tensorflow.keras.layers import Input
-from tensorflow.keras import Model
 
 ### hyperparameter settings and other constants
 batch_size = 128
@@ -105,12 +103,11 @@ def train_fully_connected_sgd(Xs, Ys, d1, d2, alpha, beta, B, epochs):
 #   history     the history of training returned by model.fit (should be of type tensorflow.python.keras.callbacks.History)
 def train_fully_connected_adam(Xs, Ys, d1, d2, alpha, rho1, rho2, B, epochs):
     model = Sequential()
-    # TODO what is the mnist input shape? is it this constant?
     model.add(tf.keras.layers.Flatten(input_shape=mnist_input_shape))
-    model.add(Dense(d1, activation='relu', input_shape=mnist_input_shape))
+    model.add(Dense(d1, activation='relu'))
     model.add(Dense(d2, activation='relu'))
     model.add(Dense(num_classes, activation='softmax'))
-    model.compile(optimizer=Adam(learning_rate=alpha, beta_1=rho1, beta_2=rho2),
+    model.compile(optimizer=Adam(learning_rate=0.001, beta_1=rho1, beta_2=rho2),
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                   metrics=['accuracy'])
     history = model.fit(Xs, Ys, epochs=epochs, batch_size=B, verbose=0, validation_split=0.1)
@@ -143,7 +140,7 @@ def train_fully_connected_bn_sgd(Xs, Ys, d1, d2, alpha, beta, B, epochs):
                   metrics=['accuracy']
     )
     #metrics=[tf.keras.metrics.SparseCategoricalAccuracy()
-    history = model.fit(x=Xs, y=Ys, epochs=epochs, batch_size=B, verbose=0, validation_split=0.1)
+    history = model.fit(Xs, Ys, epochs=epochs, batch_size=B, verbose=0, validation_split=0.1)
     return model, history
 
 # train a convolutional neural network on MNIST data using SGD, and print the usual output from TF
@@ -179,8 +176,8 @@ def train_CNN_sgd(Xs, Ys, alpha, rho1, rho2, B, epochs):
 def plot_history(histories, key):
     """ histories is a list of tuples  of the form [(history, label)...]"""
     x_axis = numpy.arange(len(histories[0][0].history['loss']))
-    fig, (ax1) = pyplot.subplots(1, 1, figsize=(10, 8))
-    colors = ['orange', 'red', 'green', 'blue']
+    fig, (ax1) = pyplot.subplots(4, 2, figsize=(10, 8))
+    colors = ['orange', 'red', 'green', 'blue', 'yellow']
     for ind, (history, label) in enumerate(histories):
         ax1.plot(x_axis, history.history[key], color=colors[ind], label=label)
     ax1.set_title(key)
@@ -188,7 +185,30 @@ def plot_history(histories, key):
     pyplot.savefig(key + ".png")
 
 
-def part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te):
+# plot_history(histories, 'loss')
+    # plot_history(histories, 'accuracy')
+    # plot_history(histories, 'val_loss')
+    # plot_history(histories, 'val_accuracy')
+
+
+def plot_loss(axis, i, j, history, test, label):
+    x_axis = numpy.arange(epochs) + 1
+    axis[i][j].plot(x_axis, history.history['loss'], color='orange', label='loss')
+    axis[i][j].plot(x_axis, history.history['val_loss'], color='green', label='validation loss')
+    axis[i][j].plot(x_axis, [test] * 10, color = 'blue', label='test loss')
+    axis[i][j].set_title(label)
+    axis[i][j].legend()
+
+def plot_accuracy(axis, i, j, history, test, label):
+    x_axis = numpy.arange(epochs) + 1
+    axis[i][j].plot(x_axis, history.history['accuracy'], color='orange', label='accuracy')
+    axis[i][j].plot(x_axis, history.history['val_accuracy'], color='green', label='validation accuracy')
+    axis[i][j].plot(x_axis, [test] * 10, color='blue', label='test accuracy')
+    axis[i][j].set_title(label)
+    axis[i][j].legend()
+
+
+def part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
     before_time = time.time()
     model, history = train_fully_connected_sgd(Xs_tr, Ys_tr, d1, d2, alpha, 0.0, batch_size, epochs)
     after_time = time.time() - before_time
@@ -197,10 +217,12 @@ def part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te):
     print('test loss: ', test_loss)
     print('test accuracy:, ', test_acc)
     print('time: ', after_time)
+    plot_accuracy(axis, 0, 0, history, test_acc, 'SGD')
+    plot_loss(axis, 0, 1, history, test_loss, 'SGD')
     return history
 
 
-def part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te):
+def part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
     before_time = time.time()
     model, history = train_fully_connected_sgd(Xs_tr, Ys_tr, d1, d2, alpha, 0.9, batch_size, epochs)
     after_time = time.time() - before_time
@@ -209,10 +231,11 @@ def part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te):
     print('test loss: ', test_loss)
     print('test accuracy:, ', test_acc)
     print('time: ', after_time)
-
+    plot_accuracy(axis, 1, 0, history, test_acc, 'Momentum ')
+    plot_loss(axis, 1, 1, history, test_loss, 'Momentum')
     return history
 
-def part1_fully_connected_adam(Xs_tr, Ys_tr, Xs_te, Ys_te):
+def part1_fully_connected_adam(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
     before_time = time.time()
     model, history = train_fully_connected_adam(Xs_tr, Ys_tr, d1, d2, alpha, rho1, rho2, batch_size, epochs)
     after_time = time.time() - before_time
@@ -221,10 +244,12 @@ def part1_fully_connected_adam(Xs_tr, Ys_tr, Xs_te, Ys_te):
     print('test loss: ', test_loss)
     print('test accuracy:, ', test_acc)
     print('time: ', after_time)
+    plot_accuracy(axis, 2, 0, history, test_acc, 'Adam ')
+    plot_loss(axis, 2, 1, history, test_loss, 'Adam')
 
     return history
 
-def part1_fully_connected_BN(Xs_tr, Ys_tr, Xs_te, Ys_te):
+def part1_fully_connected_BN(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
     before_time = time.time()
     model, history = train_fully_connected_bn_sgd(Xs_tr, Ys_tr, d1, d2, alpha, 0.9, batch_size, epochs)
     after_time = time.time() - before_time
@@ -233,6 +258,8 @@ def part1_fully_connected_BN(Xs_tr, Ys_tr, Xs_te, Ys_te):
     print('test loss: ', test_loss)
     print('test accuracy:, ', test_acc)
     print('time: ', after_time)
+    plot_accuracy(axis, 3, 0, history, test_acc, 'Batch Norm')
+    plot_loss(axis, 3, 1, history, test_loss, 'Batch Norm')
 
     return history
 
@@ -252,9 +279,9 @@ def part2_1_step_size_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te):
     print(validation_loss)
 
 def part2_2_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te):
-    alphas = [1.0, 0.3, 0.1, 0.03, 0.01, 0.003]
+    alphas = [0.1, 0.03, 0.01]
     betas = [0.99, 0.9, 0.7]
-    batch_sizes = [256, 128, 64, 32]
+    batch_sizes = [128, 64, 32]
     validation_accuracy = {}
     validation_loss = {}
     for alpha1 in alphas:
@@ -275,12 +302,13 @@ def part2_3_random_search(Xs_tr, Ys_tr, Xs_te, Ys_te):
     alphas = [1.0, 0.3, 0.1, 0.03, 0.01, 0.003]
     betas = [0.99, 0.9, 0.7]
     batch_sizes = [256, 128, 64, 32]
-    distribution = set()
+    distribution = []
     for alpha1 in alphas:
         for beta1 in betas:
             for batch_size1 in batch_sizes:
-                distribution.add((alpha1, beta1, batch_size1))
-    random_sample = random.sample(distribution, 10)
+                distribution.append((alpha1, beta1, batch_size1))
+
+    random_sample = random2.sample(distribution, 10)
     validation_accuracy = {}
     validation_loss = {}
     for alpha2, beta2, batch_size2 in random_sample:
@@ -296,25 +324,57 @@ def part2_3_random_search(Xs_tr, Ys_tr, Xs_te, Ys_te):
     print(validation_loss)
 
 def part3_CNN(Xs_tr, Ys_tr, Xs_te, Ys_te):
-    pass
+    before_time = time.time()
+    model, history = train_CNN_sgd(Xs_tr, Ys_tr, .001, rho1, rho2, batch_size, epochs)
+    after_time = time.time() - before_time
+    test_loss, test_acc = model.evaluate(Xs_te, Ys_te)
+    print('===========part3_CNN===============')
+    print('test loss: ', test_loss)
+    print('test accuracy:, ', test_acc)
+    print('time: ', after_time)
+    fig, (axis) = pyplot.subplots(1, 2, figsize=(10, 8))
+
+    x_axis = numpy.arange(epochs) + 1
+    axis[0].plot(x_axis, history.history['accuracy'], color='orange', label='accuracy')
+    axis[0].plot(x_axis, history.history['val_accuracy'], color='green', label='validation accuracy')
+    axis[0].plot(x_axis, [test_acc] * 10, color='blue', label='test accuracy')
+    axis[0].set_title('CNN')
+    axis[0].legend()
+
+    axis[1].plot(x_axis, history.history['loss'], color='orange', label='loss')
+    axis[1].plot(x_axis, history.history['val_loss'], color='green', label='validation loss')
+    axis[1].plot(x_axis, [test_loss] * 10, color = 'blue', label='test loss')
+    axis[1].set_title('CNN')
+    axis[1].legend()
+    
+    pyplot.savefig("CNN.png")
+
+    return history
 
 if __name__ == "__main__":
     (Xs_tr, Ys_tr, Xs_te, Ys_te) = load_MNIST_dataset()
+    fig, (axis) = pyplot.subplots(4, 2, figsize=(14, 18))
 
-    # sgd_history = part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    # momentum_history = part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    # adam_history = part1_fully_connected_adam(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    # bn_history = part1_fully_connected_BN(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    # histories = [(sgd_history, 'SGD'), (momentum_history, 'momentum'), (adam_history, 'adam'), (bn_history, 'batch norm')]
+    # sgd_history = part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
+    # momentum_history = part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
+    # adam_history = part1_fully_connected_adam(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
+    # bn_history = part1_fully_connected_BN(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
+    # pyplot.savefig("8Plots" + ".png")
+
+    # part2_1_step_size_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
+    #grid_time = time.time()
+    #part2_2_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
+    #print('###### Grid Search time: ', time.time()-grid_time)
+    # random_time = time.time()
+    # part2_3_random_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
+    # print('###### Random Search time: ', time.time()-random_time)
+
+    # model, history = train_CNN_sgd(Xs_tr, Ys_tr, alpha, rho1, rho2, batch_size, epochs)
+    # histories = [(sgd_history, 'SGD')]
     # plot_history(histories, 'loss')
     # plot_history(histories, 'accuracy')
     # plot_history(histories, 'val_loss')
     # plot_history(histories, 'val_accuracy')
-
-    part2_1_step_size_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    part2_2_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    part2_3_random_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
-
-    #model, history = train_CNN_sgd(Xs_tr, Ys_tr, alpha, rho1, rho2, batch_size, epochs)
+    part3_CNN(Xs_tr, Ys_tr, Xs_te, Ys_te)
 
 
