@@ -218,7 +218,7 @@ def part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
 
 def part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
     before_time = time.time()
-    model, history = train_fully_connected_sgd(Xs_tr, Ys_tr, d1, d2, alpha, 0.9, batch_size, epochs)
+    model, history = train_fully_connected_sgd(Xs_tr, Ys_tr, d1, d2, 0.03, 0.9, 64, epochs)
     after_time = time.time() - before_time
     test_loss, test_acc = model.evaluate(Xs_te, Ys_te)
     print('===========part1_fully_connected_momentum===============')
