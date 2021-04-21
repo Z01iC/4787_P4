@@ -20,6 +20,7 @@ import time
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPool2D
+from tensorflow.keras.layers import Activation
 
 ### hyperparameter settings and other constants
 batch_size = 128
@@ -107,7 +108,7 @@ def train_fully_connected_adam(Xs, Ys, d1, d2, alpha, rho1, rho2, B, epochs):
     model.add(Dense(d1, activation='relu'))
     model.add(Dense(d2, activation='relu'))
     model.add(Dense(num_classes, activation='softmax'))
-    model.compile(optimizer=Adam(learning_rate=0.001, beta_1=rho1, beta_2=rho2),
+    model.compile(optimizer=Adam(learning_rate=alpha, beta_1=rho1, beta_2=rho2),
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                   metrics=['accuracy'])
     history = model.fit(Xs, Ys, epochs=epochs, batch_size=B, verbose=0, validation_split=0.1)
@@ -130,16 +131,16 @@ def train_fully_connected_adam(Xs, Ys, d1, d2, alpha, rho1, rho2, B, epochs):
 def train_fully_connected_bn_sgd(Xs, Ys, d1, d2, alpha, beta, B, epochs):
     model = Sequential()
     model.add(tf.keras.layers.Flatten(input_shape=mnist_input_shape))
-    model.add(Dense(d1, activation='relu'))
+    model.add(Dense(d1))
     model.add(BatchNormalization())
-    model.add(Dense(d2, activation='relu'))
+    model.add(Activation('relu'))
+    model.add(Dense(d2))
     model.add(BatchNormalization())
     model.add(Dense(num_classes, activation='softmax'))
     model.compile(optimizer=SGD(lr=alpha, momentum=beta),
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                   metrics=['accuracy']
     )
-    #metrics=[tf.keras.metrics.SparseCategoricalAccuracy()
     history = model.fit(Xs, Ys, epochs=epochs, batch_size=B, verbose=0, validation_split=0.1)
     return model, history
 
@@ -169,7 +170,7 @@ def train_CNN_sgd(Xs, Ys, alpha, rho1, rho2, B, epochs):
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(),
                   metrics=['accuracy'])
     history = model.fit(Xs, Ys, epochs=epochs, batch_size=B, verbose=0, validation_split=0.1)
-    # evaluate the model
+
     return model, history
 
 
@@ -183,13 +184,6 @@ def plot_history(histories, key):
     ax1.set_title(key)
     ax1.legend()
     pyplot.savefig(key + ".png")
-
-
-# plot_history(histories, 'loss')
-    # plot_history(histories, 'accuracy')
-    # plot_history(histories, 'val_loss')
-    # plot_history(histories, 'val_accuracy')
-
 
 def plot_loss(axis, i, j, history, test, label):
     x_axis = numpy.arange(epochs) + 1
@@ -237,7 +231,7 @@ def part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
 
 def part1_fully_connected_adam(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
     before_time = time.time()
-    model, history = train_fully_connected_adam(Xs_tr, Ys_tr, d1, d2, alpha, rho1, rho2, batch_size, epochs)
+    model, history = train_fully_connected_adam(Xs_tr, Ys_tr, d1, d2, 0.001, rho1, rho2, batch_size, epochs)
     after_time = time.time() - before_time
     test_loss, test_acc = model.evaluate(Xs_te, Ys_te)
     print('===========part1_fully_connected_adam===============')
@@ -299,9 +293,9 @@ def part2_2_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te):
     print(validation_loss)
 
 def part2_3_random_search(Xs_tr, Ys_tr, Xs_te, Ys_te):
-    alphas = [1.0, 0.3, 0.1, 0.03, 0.01, 0.003]
+    alphas = [0.1, 0.03, 0.01]
     betas = [0.99, 0.9, 0.7]
-    batch_sizes = [256, 128, 64, 32]
+    batch_sizes = [128, 64, 32]
     distribution = []
     for alpha1 in alphas:
         for beta1 in betas:
@@ -346,7 +340,7 @@ def part3_CNN(Xs_tr, Ys_tr, Xs_te, Ys_te):
     axis[1].plot(x_axis, [test_loss] * 10, color = 'blue', label='test loss')
     axis[1].set_title('CNN')
     axis[1].legend()
-    
+
     pyplot.savefig("CNN.png")
 
     return history
@@ -356,15 +350,15 @@ if __name__ == "__main__":
     fig, (axis) = pyplot.subplots(4, 2, figsize=(14, 18))
 
     # sgd_history = part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
-    # momentum_history = part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
+    momentum_history = part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
     # adam_history = part1_fully_connected_adam(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
     # bn_history = part1_fully_connected_BN(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
     # pyplot.savefig("8Plots" + ".png")
 
     # part2_1_step_size_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    #grid_time = time.time()
-    #part2_2_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    #print('###### Grid Search time: ', time.time()-grid_time)
+    # grid_time = time.time()
+    # part2_2_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
+    # print('###### Grid Search time: ', time.time()-grid_time)
     # random_time = time.time()
     # part2_3_random_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
     # print('###### Random Search time: ', time.time()-random_time)
@@ -375,6 +369,6 @@ if __name__ == "__main__":
     # plot_history(histories, 'accuracy')
     # plot_history(histories, 'val_loss')
     # plot_history(histories, 'val_accuracy')
-    part3_CNN(Xs_tr, Ys_tr, Xs_te, Ys_te)
+    # part3_CNN(Xs_tr, Ys_tr, Xs_te, Ys_te)
 
 
