@@ -218,7 +218,7 @@ def part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
 
 def part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te, axis):
     before_time = time.time()
-    model, history = train_fully_connected_sgd(Xs_tr, Ys_tr, d1, d2, 0.03, 0.9, 64, epochs)
+    model, history = train_fully_connected_sgd(Xs_tr, Ys_tr, d1, d2, alpha, 0.9, batch_size, epochs)
     after_time = time.time() - before_time
     test_loss, test_acc = model.evaluate(Xs_te, Ys_te)
     print('===========part1_fully_connected_momentum===============')
@@ -349,26 +349,26 @@ if __name__ == "__main__":
     (Xs_tr, Ys_tr, Xs_te, Ys_te) = load_MNIST_dataset()
     fig, (axis) = pyplot.subplots(4, 2, figsize=(14, 18))
 
-    # sgd_history = part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
+    sgd_history = part1_fully_connected_SGD(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
     momentum_history = part1_fully_connected_momentum(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
-    # adam_history = part1_fully_connected_adam(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
-    # bn_history = part1_fully_connected_BN(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
-    # pyplot.savefig("8Plots" + ".png")
+    adam_history = part1_fully_connected_adam(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
+    bn_history = part1_fully_connected_BN(Xs_tr, Ys_tr, Xs_te, Ys_te, axis)
+    pyplot.savefig("8Plots" + ".png")
 
-    # part2_1_step_size_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    # grid_time = time.time()
-    # part2_2_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    # print('###### Grid Search time: ', time.time()-grid_time)
-    # random_time = time.time()
-    # part2_3_random_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
-    # print('###### Random Search time: ', time.time()-random_time)
+    part2_1_step_size_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
+    grid_time = time.time()
+    part2_2_grid_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
+    print('###### Grid Search time: ', time.time()-grid_time)
+    random_time = time.time()
+    part2_3_random_search(Xs_tr, Ys_tr, Xs_te, Ys_te)
+    print('###### Random Search time: ', time.time()-random_time)
 
-    # model, history = train_CNN_sgd(Xs_tr, Ys_tr, alpha, rho1, rho2, batch_size, epochs)
-    # histories = [(sgd_history, 'SGD')]
-    # plot_history(histories, 'loss')
-    # plot_history(histories, 'accuracy')
-    # plot_history(histories, 'val_loss')
-    # plot_history(histories, 'val_accuracy')
-    # part3_CNN(Xs_tr, Ys_tr, Xs_te, Ys_te)
+    model, history = train_CNN_sgd(Xs_tr, Ys_tr, alpha, rho1, rho2, batch_size, epochs)
+    histories = [(sgd_history, 'SGD')]
+    plot_history(histories, 'loss')
+    plot_history(histories, 'accuracy')
+    plot_history(histories, 'val_loss')
+    plot_history(histories, 'val_accuracy')
+    part3_CNN(Xs_tr, Ys_tr, Xs_te, Ys_te)
 
 
